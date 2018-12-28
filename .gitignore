@@ -1,0 +1,16 @@
+/node_modules
+/public/bower_components
+/public/public/bower_components
+/.idea
+npm-debug.log
+/public/tempPics/*.jpg
+/public/tempPics/*.png
+/public/orders/*.jpg
+/public/orders/*.png
+/public/videos/*.mp4
+/logs/*
+/config/dev.json
+/config/development.json
+/config/prod.json
+/config/production.json
+!/logs/*.txt

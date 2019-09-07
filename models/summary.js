@@ -1,17 +1,10 @@
-"use strict";
-var bcrypt = require('bcrypt-nodejs');
+'use strict'
 
-module.exports = function(sequelize, DataTypes) {
-    var Summary = sequelize.define('summary', {
-        id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-        },
-        vehicleNo:DataTypes.STRING,
-        fuelEfficiancy: DataTypes.STRING,
-        odoMeter: DataTypes.STRING,
-        tasksDue:DataTypes.STRING
-    });
-    return Summary;
-};
+var mongoose = require('mongoose')
+
+module.exports = {
+    vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'vehicle' }
+    // fuelEfficiancy: DataTypes.STRING,
+    // odoMeter: DataTypes.STRING,
+    // tasksDue: DataTypes.STRING
+}

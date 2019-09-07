@@ -1,32 +1,55 @@
-"use strict";
-var bcrypt = require('bcrypt-nodejs');
+'use strict'
 
-module.exports = function (sequelize, DataTypes) {
-    var Trip = sequelize.define('trip', {
-        id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-        },
-        // adminId:DataTypes.INTEGER,
-        code:DataTypes.STRING,
-        vehicleNo: DataTypes.STRING,        
-        purpose:DataTypes.STRING,
-        source:DataTypes.STRING,
-        destination:DataTypes.STRING,
-        duration:DataTypes.STRING,        
-        status: {
-            type: DataTypes.ENUM,
-            values: ['new','start', 'complete','cancel','approve','reject']
-        },
-        date:DataTypes.DATE,
-        passengers:DataTypes.INTEGER,
-        rejectionReason:DataTypes.STRING,
-        tripMessage:DataTypes.STRING,
-        vehicleType:DataTypes.STRING,
-        type:DataTypes.STRING,
-        model:DataTypes.STRING
+var mongoose = require('mongoose')
 
-    });
-    return Trip;
-};
+module.exports = {
+    from: Date, // time
+    till: Date,
+
+    startTime: Date, // the actual time when the trip started
+    endTime: Date, // the actual time when the trip ended
+
+    type: { type: String }, // trip type: personal, official
+
+    purpose: String,
+    route: { type: mongoose.Schema.Types.ObjectId, ref: 'route' }, // only in case of planned routes
+    origin: {
+        coordinates: {
+            type: [Number], // [<longitude>, <latitude>]
+            index: '2dsphere' // create the geospatial index
+        },
+        name: String,
+        description: String
+    },
+    destination: {
+        coordinates: {
+            type: [Number], // [<longitude>, <latitude>]
+            index: '2dsphere' // create the geospatial index
+        },
+        name: String,
+        description: String
+    },
+    wayPoints: [{
+        spot: { type: mongoose.Schema.Types.ObjectId, ref: 'spot' },
+        passengers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }],
+        eta: Date,
+        ata: Date
+    }],
+
+    locationLogs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'locationLog' }],
+    duration: Number, // in minutes
+    status: {
+        type: String,
+        enum: ['new', 'canceled', 'rejected', 'approved', 'active', 'started', 'completed']
+    },
+    date: Date, // todo remove
+    notes: [{
+        text: String,
+        date: Date
+    }], // reason, notes etc
+
+    vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'vehicle' },
+    passengers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'passenger' }],
+    driver: { type: mongoose.Schema.Types.ObjectId, ref: 'driver' },
+    organization: { type: mongoose.Schema.Types.ObjectId, ref: 'organization' }
+}

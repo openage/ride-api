@@ -1,55 +1,54 @@
-'use strict';
-var async = require('async');
-var db = require('../models/index');
-var schedule = require('node-schedule');
-var moment = require('moment');
-var Client = require('node-rest-client').Client;
-var atomsConfig = require('config').get('atoms');
-var client = new Client();
+'use strict'
+var async = require('async')
+var db = require('../models/index')
+var schedule = require('node-schedule')
+var moment = require('moment')
+var Client = require('node-rest-client').Client
+var atomsConfig = require('config').get('atoms')
+var client = new Client()
 
-var sendMessage = function(type, message, cb) {
-    var templateCode, atomsApi, 
-    // toAdmin
-    toUser = message.emailId;
-    templateCode = message.templateCode;
+var sendMessage = function (type, message, cb) {
+    var templateCode, atomsApi,
+        // toAdmin
+        toUser = message.emailId
+    templateCode = message.templateCode
 
     if (type === 'sms') {
         // templateCode = atomsConfig.smsTemplate;
         // toAdmin = atomsConfig.phone;
-        atomsApi = '/sms/send';
-
+        atomsApi = '/sms/send'
     } else {
         // templateCode = atomsConfig.emailTemplate;
         // toAdmin = atomsConfig.email;
-        atomsApi = '/emails/send';
+        atomsApi = '/emails/send'
     }
     var args = {
         headers: {
-            "Content-Type": "application/json",
-            "x-access-token": atomsConfig.token
+            'Content-Type': 'application/json',
+            'x-access-token': atomsConfig.token
         },
         data: {
-            "template": {
-                "code": templateCode
+            'template': {
+                'code': templateCode
 
             },
             // "to": toAdmin,
-            "to": toUser,
-            
-            "from": "ankitmanchandaa@gmail.com",
-            "data": message
-        }
-    };
+            'to': toUser,
 
-    client.post(atomsConfig.url + atomsApi, args, function(data, response) {
-        if (cb) {
-            cb();
+            'from': 'ankitmanchandaa@gmail.com',
+            'data': message
         }
-    });
+    }
+
+    client.post(atomsConfig.url + atomsApi, args, function (data, response) {
+        if (cb) {
+            cb()
+        }
+    })
 }
 // exports.build = function(newTrip){
 //   var message ={}
-//    if(newTrip.status==='approve') 
+//    if(newTrip.status==='approve')
 //    {
 //            message = {
 //            status:newTrip.status,
@@ -67,8 +66,8 @@ var sendMessage = function(type, message, cb) {
 
 //         }
 //     }
-//         if(newTrip.status==='reject') 
-//         message = { 
+//         if(newTrip.status==='reject')
+//         message = {
 //             status:newTrip.status,
 //             destination:newTrip.destination,
 //             emailId:newTrip.employee.email,
@@ -82,96 +81,93 @@ var sendMessage = function(type, message, cb) {
 //         }
 
 //         sendMessage('emails', message);
-  
+
 // }
 
-module.exports.configure = function() { //todo: service Alert overdue+sms+email
-   
-    var rule = new schedule.RecurrenceRule();
-   
+module.exports.configure = function () { // todo: service Alert overdue+sms+email
+    var rule = new schedule.RecurrenceRule()
 
     setInterval(() => {
         async.waterfall([
-                (cb) => {
-                    db.alerts.findAll({
-                        include: [{ model: db.vehicle }]
-                    }).then((alerts) => {
-                        if (!alerts) {
-                            cb('no alerts found');
-                        }
-                        cb(null, alerts);
-                    });
-                },
-                (alerts, cb) => {
-                    async.parallel([
-                            callback => {
-                                alerts.forEach((alert) => { //for updating status to overdue
-                                    var endDate = moment(alert.endDate);
-                                    rule.month = moment(endDate).month();
-                                    rule.date = moment(endDate).date();
-                                    rule.hour = moment(endDate).hour();
-                                    rule.minute = moment(endDate).minute();
-                                    schedule.scheduleJob(rule, () => {
-                                        alert.status = 'overdue';
-                                        alert.save();
-                                    });
-                                });
-                                callback(null, alerts);
-                            },
-                            callback => {
-                                var message = {};
-                                alerts.forEach((alert) => { //for updating status to overdue
-                                    var smsNotify = moment(alert.smsNotify);
-                                    var endDate = moment(alert.endDate);
-                                    rule.month = moment(smsNotify).month();
-                                    rule.date = moment(smsNotify).date();
-                                    rule.hour = moment(smsNotify).hour();
-                                    rule.minute = moment(smsNotify).minute();
-                                    message.expDate = moment(endDate._d).format('YYYY MM DD');
-                                    if (alert.vehicle) {
-                                        message.vehicleNo = alert.vehicle.vehicleNo;
-                                    }
-                                    message.type = alert.type;
-                                    schedule.scheduleJob(rule, () => {
-                                        sendMessage('sms', message);
-                                    });
-                                });
-                                callback(null, alerts);
-                            },
-                            callback => {
-                                var message = {};
-                                alerts.forEach((alert) => { //for updating status to overdue
-                                    var emailNotify = moment(alert.emailNotify);
-                                    var endDate = moment(alert.endDate);
-                                    rule.month = moment(emailNotify).month();
-                                    rule.date = moment(emailNotify).date();
-                                    rule.hour = moment(emailNotify).hour();
-                                    rule.minute = moment(emailNotify).minute();
-                                    message.expDate = moment(endDate._d).format('YYYY MM DD');
-                                    if (alert.vehicle) {
-                                        message.vehicleNo = alert.vehicle.vehicleNo;
-                                    }
-                                    message.type = alert.type;
-                                    schedule.scheduleJob(rule, () => {
-                                        sendMessage('emails', message);
-                                    });
-                                });
-                                callback(null, alerts);
+            (cb) => {
+                db.alerts.findAll({
+                    include: [{ model: db.vehicle }]
+                }).then((alerts) => {
+                    if (!alerts) {
+                        cb('no alerts found')
+                    }
+                    cb(null, alerts)
+                })
+            },
+            (alerts, cb) => {
+                async.parallel([
+                    callback => {
+                        alerts.forEach((alert) => { // for updating status to overdue
+                            var endDate = moment(alert.endDate)
+                            rule.month = moment(endDate).month()
+                            rule.date = moment(endDate).date()
+                            rule.hour = moment(endDate).hour()
+                            rule.minute = moment(endDate).minute()
+                            schedule.scheduleJob(rule, () => {
+                                alert.status = 'overdue'
+                                alert.save()
+                            })
+                        })
+                        callback(null, alerts)
+                    },
+                    callback => {
+                        var message = {}
+                        alerts.forEach((alert) => { // for updating status to overdue
+                            var smsNotify = moment(alert.smsNotify)
+                            var endDate = moment(alert.endDate)
+                            rule.month = moment(smsNotify).month()
+                            rule.date = moment(smsNotify).date()
+                            rule.hour = moment(smsNotify).hour()
+                            rule.minute = moment(smsNotify).minute()
+                            message.expDate = moment(endDate._d).format('YYYY MM DD')
+                            if (alert.vehicle) {
+                                message.vehicleNo = alert.vehicle.vehicleNo
                             }
-                        ],
-                        (err, results) => {
-                            if (err) {
-                                cb(err);
+                            message.type = alert.type
+                            schedule.scheduleJob(rule, () => {
+                                sendMessage('sms', message)
+                            })
+                        })
+                        callback(null, alerts)
+                    },
+                    callback => {
+                        var message = {}
+                        alerts.forEach((alert) => { // for updating status to overdue
+                            var emailNotify = moment(alert.emailNotify)
+                            var endDate = moment(alert.endDate)
+                            rule.month = moment(emailNotify).month()
+                            rule.date = moment(emailNotify).date()
+                            rule.hour = moment(emailNotify).hour()
+                            rule.minute = moment(emailNotify).minute()
+                            message.expDate = moment(endDate._d).format('YYYY MM DD')
+                            if (alert.vehicle) {
+                                message.vehicleNo = alert.vehicle.vehicleNo
                             }
-                            cb(null, results);
-                        });
-                }
-            ],
-            (err) => {
-                if (err) {
-                    return (err);
-                }
-                return;
-            });
-    }, 60000);
-};
+                            message.type = alert.type
+                            schedule.scheduleJob(rule, () => {
+                                sendMessage('emails', message)
+                            })
+                        })
+                        callback(null, alerts)
+                    }
+                ],
+                (err, results) => {
+                    if (err) {
+                        cb(err)
+                    }
+                    cb(null, results)
+                })
+            }
+        ],
+        (err) => {
+            if (err) {
+                return (err)
+            }
+        })
+    }, 60000)
+}

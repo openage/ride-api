@@ -1,118 +1,123 @@
-'use strict';
-var auth = require('../middleware/authorization');
-var apiRoutes = require('../helpers/apiRoutes');
-var fs = require('fs');
-var loggerConfig = require('config').get('logger');
-var appRoot = require('app-root-path');
+'use strict'
+var auth = require('../helpers/auth')
+var apiRoutes = require('@open-age/express-api')
+var fs = require('fs')
+var loggerConfig = require('config').get('logger')
+var appRoot = require('app-root-path')
+const specs = require('../specs')
 
-var logger = require('../helpers/logger')();
+var logger = require('../helpers/logger')()
 
 module.exports.configure = function (app) {
-    app.get('/', function (req, res) {
-        res.render('index', { title: 'VMS-API' });
-    });
+    let specsHandler = function (req, res) {
+        fs.readFile('./public/specs.html', function (err, data) {
+            if (err) {
+                res.writeHead(404)
+                res.end()
+                return
+            }
+            res.contentType('text/html')
+            res.send(data)
+        })
+    }
 
     var mobileView = function (req, res, next) {
-        res.log = logger.start(req.method + ' ' + req.url);
+        res.log = logger.start(req.method + ' ' + req.url)
         if (req.body) {
-            res.log.debug(req.body);
+            res.log.debug(req.body)
         }
-        req.isMobile = true;
-        return next();
-    };
+        req.isMobile = true
+        return next()
+    }
 
+    app.get('/', specsHandler)
     var desktopView = function (req, res, next) {
-        res.log = logger.start(req.method + ' ' + req.url);
+        res.log = logger.start(req.method + ' ' + req.url)
         if (req.body) {
-            res.log.debug(req.body);
+            res.log.debug(req.body)
         }
-        req.isMobile = false;
-        return next();
-    };
-    app.get('/swagger', function (req, res) {
-        res.writeHeader(200, { "Content-Type": "text/html" });
+        req.isMobile = false
+        return next()
+    }
+    app.get('/swagger', (req, res) => {
+        res.writeHeader(200, {
+            'Content-Type': 'text/html'
+        })
         fs.readFile('./public/swagger.html', null, function (err, data) {
             if (err) {
-                res.writeHead(404);
+                res.writeHead(404)
+                res.end()
+                return
             }
-            res.write(data);
-            res.end();
-        });
-    });
-    var api = apiRoutes(app);
+            res.write(data)
+            res.end()
+        })
+    })
+
+    app.get('/specs', specsHandler)
+
+    app.get('/api/specs', function (req, res) {
+        res.contentType('application/json')
+        res.send(specs.get())
+    })
+
+    var api = apiRoutes(app)
 
     api.model('vehicles')
         .register([{
             action: 'POST',
-            method: 'create'
+            method: 'create',
+            filter: auth.requiresAdmin
         }, {
             action: 'GET',
             url: '/:id',
-            method: 'get'
+            method: 'get',
+            filter: auth.requiresPassengerOrDriver
+
         }, {
             action: 'GET',
-            method: 'search'
-        }, {
-            action: 'GET',
-            url: '/:id/fuelLogs',
-            method: 'getfuelLogs'
-        }, {
-            action: 'GET',
-            url: '/:id/serviceLogs',
-            method: 'getserviceLogs'
-        }, {
-            action: 'GET',
-            url: '/:id/alerts',
-            method: 'getalerts'
+            method: 'search',
+            filter: auth.requiresPassengerOrDriver
         }, {
             action: 'PUT',
             url: '/:id',
-            method: 'update'
+            method: 'update',
+            filter: auth.requiresAdmin
         }, {
             action: 'DELETE',
             url: '/:id',
-            method: 'delete'
-        },
-        {
-            action: 'GET',
-            url: '/get/find',
-            method: 'findVehicles'
-        },
-        {
-            action: 'POST',
-            url: '/images',
-            method: 'vehicleImages'
-        },
-        {
-            action: 'GET',
-            url: '/images/:id',
-            method: 'getImage'
-        }
-        ]);
+            method: 'delete',
+            filter: auth.requiresDriver
+        }])
 
     api.model('trips')
         .register([{
             action: 'POST',
-            method: 'create'
+            method: 'create',
+            filter: auth.requiresPassenger
         }, {
             action: 'GET',
             url: '/:id',
-            method: 'get'
+            method: 'get',
+            filter: auth.requiresPassengerOrDriver
         }, {
             action: 'GET',
-            method: 'search'
+            method: 'search',
+            filter: auth.requiresPassengerOrDriver
+        }, {
+            action: 'PUT',
+            url: '/:id',
+            method: 'update',
+            filter: auth.requiresPassengerOrDriver
+        }, {
+            action: 'DELETE',
+            url: '/:id',
+            method: 'delete',
+            filter: auth.requiresDriver
         }, {
             action: 'GET',
             url: '/:id/today',
             method: 'today'
-        }, {
-            action: 'PUT',
-            url: '/:id',
-            method: 'update'
-        }, {
-            action: 'DELETE',
-            url: '/:id',
-            method: 'delete'
         }, {
             action: 'GET',
             url: '/my/awaiting',
@@ -138,93 +143,160 @@ module.exports.configure = function (app) {
             url: '/trip/excel',
             method: 'tripExcelExport'
         }
-        ]);
+        ])
 
-    api.model('summary')
-        .register('REST');
-
-    api.model('users')
-        .register([{
-            action: 'POST',
-            method: 'create'
-        }, {
-            action: 'POST',
-            url: '/signIn',
-            method: 'signIn'
-        },
-        {
-            action: 'GET',
-            method: 'search'
-        }]);
-
-    api.model('documents')
+    api.model('ratings')
         .register([{
             action: 'POST',
             method: 'create',
-            filter: auth.requiresToken
-        }, {
-            action: 'GET',
-            url: '/:id',
-            method: 'get'
-        }, {
-            action: 'GET',
-            method: 'search'
-        }, {
-            action: 'GET',
-            url: '/:id/today',
-            method: 'today'
-        }, {
-            action: 'PUT',
-            url: '/:id',
-            method: 'update'
-        }, {
-            action: 'DELETE',
-            url: '/:id',
-            method: 'delete'
-        }, {
-            action: 'GET',
-            url: '/document/download',
-            method: 'download'
-        }]);
-
-    api.model('notes')
-        .register([{
-            action: 'POST',
-            method: 'create',
-            filter: auth.requiresToken
+            filter: auth.requiresPassenger
         },{
             action: 'GET',
-            method: 'search'
-        // },{
-        //     action: 'GET',
-        //     url: '/note/download',
-        //     method: 'download'
-        }]);
+            url: '/:id',
+            method: 'get',
+            filter: auth.requiresPassengerOrDriver
+        }, {
+            action: 'GET',
+            method: 'search',
+            filter: auth.requiresPassengerOrDriver
+        }, {
+            action: 'PUT',
+            url: '/:id',
+            method: 'update',
+            filter: auth.requiresPassengerOrDriver
+        }])
 
-    api.model('fuellogs')
-        .register('REST');
+    api.model('devices').register('REST', auth.requiresAdmin)
+    api.model('brands').register('REST', auth.requiresAdmin)
+    
 
-    api.model('alerts')
-        .register('REST');
-    api.model('servicelogs')
-        .register('REST');
-    api.model('tunnels')
+    api.model({ root: 'locationLogs', controller: 'location-logs' })
         .register([{
             action: 'POST',
             method: 'create',
-        }, {
-            action: 'GET',
-            url: '/vehicleUpdate',
-            method: 'vehicleUpdate'
-        }]);
-    api.model('locationLogs')
+            filter: [auth.requiresDeviceKey]
+        }])
+
+    api.model('hooks')
         .register([{
-            action: 'PUT',
-            url: '/trace/location',
-            method: 'storeLocationLogs'
+            action: 'POST',
+            method: 'createDriver',
+            url: '/driver/create',
+            filter: auth.requiresDriver
+        }, {
+            action: 'POST',
+            method: 'updateDriver',
+            url: '/driver/update',
+            filter: auth.requiresDriver
+        },{
+            action: 'POST',
+            method: 'organizationUpdate',
+            url: '/organization/update',
+            filter: auth.requiresDriver
+         },{
+            action: 'POST',
+            method: 'passengerUpdate',
+            url: '/passenger/Update',
+            filter: auth.requiresPassenger
+         }])
+
+    api.model('drivers')
+        .register([{
+            action: 'GET',
+            method: 'search',
+            filter: auth.requiresAdmin
         }, {
             action: 'GET',
-            url: '/get/location/:id',
-            method: 'getLocationLogs'
-        }]);
-};
+            url: '/:id',
+            method: 'get',
+            filter: auth.requiresPassengerOrDriver
+        }, {
+            action: 'DELETE',
+            method: 'delete',
+            url: '/:id',
+            filter: auth.requiresAdmin
+        }
+        ])
+
+    // api.model('organizations')
+    //     .register([{
+    //         action: 'POST',
+    //         method: 'create'
+    //     },
+    //     {
+    //         action: 'GET',
+    //         method: 'search'
+    //     }
+    //     ])
+    // api.model('routes')
+    //     .register([{
+    //         action: 'POST',
+    //         method: 'create'
+    //         //    },
+    //         //    {
+    //         //        action:'GET',
+    //         //        method:'search'
+    //     }
+    //     ])
+
+    // api.model('documents')
+    //     .register([{
+    //         action: 'POST',
+    //         method: 'create',
+    //         filter: auth.requiresToken
+    //     }, {
+    //         action: 'GET',
+    //         url: '/:id',
+    //         method: 'get'
+    //     }, {
+    //         action: 'GET',
+    //         method: 'search'
+    //     }, {
+    //         action: 'GET',
+    //         url: '/:id/today',
+    //         method: 'today'
+    //     }, {
+    //         action: 'PUT',
+    //         url: '/:id',
+    //         method: 'update'
+    //     }, {
+    //         action: 'DELETE',
+    //         url: '/:id',
+    //         method: 'delete'
+    //     }, {
+    //         action: 'GET',
+    //         url: '/document/download',
+    //         method: 'download'
+    //     }]);
+
+    // api.model('notes')
+    //     .register([{
+    //         action: 'POST',
+    //         method: 'create',
+    //         filter: auth.requiresToken
+    //     }, {
+    //         action: 'GET',
+    //         method: 'search'
+    //         // },{
+    //         //     action: 'GET',
+    //         //     url: '/note/download',
+    //         //     method: 'download'
+    //     }]);
+
+    // api.model('fuellogs')
+    //     .register('REST');
+
+    // api.model('alerts')
+    //     .register('REST');
+    // api.model('servicelogs')
+    //     .register('REST');
+    // api.model('tunnels')
+    //     .register([{
+    //         action: 'POST',
+    //         method: 'create',
+    //     }, {
+    //         action: 'GET',
+    //         url: '/vehicleUpdate',
+    //         method: 'vehicleUpdate'
+    //     }]);
+}

@@ -1,5 +1,5 @@
-'use strict';
-var _ = require('underscore');
+'use strict'
+var _ = require('underscore')
 
 exports.toModel = function (entity) {
     return {
@@ -8,14 +8,14 @@ exports.toModel = function (entity) {
         // availability: entity.availability,
         // picUrl: entity.image,
         // driver: entity.driver,
-        summary:{
-                vehicleNo: entity.vehicleNo,
-                fuelEfficiancy: entity.fuelEfficiancy,
-                odoMeter: entity.odoMeter,
-                taksDue: entity.taksDue
+        summary: {
+            vehicleNo: entity.vehicleNo,
+            fuelEfficiancy: entity.fuelEfficiancy,
+            odoMeter: entity.odoMeter,
+            taksDue: entity.taksDue
         }
-    };
-};
-exports.toSearchModel = function(entities) {
-    return _.map(entities, exports.toModel);
-};
+    }
+}
+exports.toSearchModel = function (entities) {
+    return _.map(entities, exports.toModel)
+}

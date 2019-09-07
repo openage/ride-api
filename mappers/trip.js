@@ -1,69 +1,64 @@
-'use strict';
-var _ = require('underscore');
-exports.toModel = function (entity) {
+'use strict'
+
+exports.toModel = (entity) => {
     var model = {
-        // adminId:entity.adminId,
         id: entity.id,
-        name: entity.name,
-        code:entity.code,
-        phone: entity.phone,
-        email: entity.email,
-        vehicleNo: entity.vehicleNo,
         purpose: entity.purpose,
         destination: entity.destination,
-        time: entity.time,
+        origin: entity.origin,
+        till: entity.till,
+        from: entity.from,
+        startTime: entity.startTime, // actual startTime of time of trip
+        endTime: entity.endTime, // actual endTime of time of trip
         duration: entity.duration,
         status: entity.status,
-        source:entity.source,
-
-        // status: entity.status==='approve'? 'approved':entity.status ==="cancel"? 'cancelled': 'rejected' ,
         date: entity.date,
-        passengers: entity.passengers,
-        rejectionReason: entity.rejectionReason,
-        tripMessage: entity.tripMessage,
-        vehicleType: entity.vehicleType,
-        type:entity.type,
-        model:entity.model,
-
-    };
-    if(entity.employee){
-        var employee ={
-            id: entity.employee.id,
-            code: entity.employee.code,
-            name: entity.employee.name,
-            email: entity.email
-        }
-        model.employee = employee;
+        notes: entity.notes
     }
-    if(entity.driver){
-        var driver ={
+
+    if (entity.driver) {
+        model.driver = entity.driver._doc ? {
             id: entity.driver.id,
-            code: entity.driver.code,
-            name: entity.driver.name,
-            phone: entity.driver.phone
+            email: entity.driver.email,
+            phone: entity.driver.phone,
+            profile: entity.driver.profile,
+            rating: entity.driver.rating
+        } : {
+            id: entity.driver.toString()
         }
-        model.driver = driver;
     }
-    if(entity.admin){
-        var admin ={
-            id: entity.admin.id,
-            code: entity.admin.code,
-            name: entity.admin.name
-        }
-        model.admin = admin;
-    }
-    if(entity.vehicle){
-        var vehicle ={
-            id: entity.vehicle.id,
-            picUrl: entity.vehicle.picUrl,
-            capacity: entity.vehicle.capacity
-        }
-        model.vehicle = vehicle;
-    }
-    
 
-    return model;
-};
-exports.toSearchModel = function (entities) {
-    return _.map(entities, exports.toModel);
-};
+    if (entity.vehicle) {
+        model.vehicle = entity.vehicle._doc ? {
+            id: entity.vehicle.id,
+            pic: entity.vehicle.pic,
+            capacity: entity.vehicle.capacity,
+            vehicleNo: entity.vehicle.vehicleNo,
+            model: entity.vehicle.model,
+            rating: entity.vehicle.rating
+        } : {
+            id: entity.vehicle.toString()
+        }
+    }
+
+    if (entity.passengers && entity.passengers.length) {
+        model.passengers = entity.passengers.map((passenger) => {
+            return passenger._doc ? {
+                id: passenger.id,
+                email: passenger.email,
+                phone: passenger.phone,
+                profile: passenger.profile
+            } : {
+                id: passenger.toString()
+            }
+        })
+    }
+
+    return model
+}
+
+exports.toSearchModel = (entities) => {
+    return entities.map((entity) => {
+        return exports.toModel(entity)
+    })
+}

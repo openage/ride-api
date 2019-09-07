@@ -1,9 +1,9 @@
-"use strict";
-var _ = require('underscore');
-exports.toModel = function(entity) {
+'use strict'
+var _ = require('underscore')
+exports.toModel = function (entity) {
     return {
         id: entity.id,
-        vehicleNo: entity.vehicleNo || entity.vehicleId, //todo remove en.vehicleNo
+        vehicleNo: entity.vehicleNo || entity.vehicleId, // todo remove en.vehicleNo
         date: entity.date,
         odoMeter: entity.odoMeter,
         fuel: entity.fuel,
@@ -12,8 +12,8 @@ exports.toModel = function(entity) {
         quantity: entity.quantity,
         driver: entity.driver,
         amount: entity.amount
-    };
-};
-exports.toSearchModel = function(entities) {
-    return _.map(entities, exports.toModel);
-};
+    }
+}
+exports.toSearchModel = function (entities) {
+    return _.map(entities, exports.toModel)
+}

@@ -1,7 +1,6 @@
-'use strict';
-var _ = require('underscore');
-exports.toModel = function(entity) {
-
+'use strict'
+var _ = require('underscore')
+exports.toModel = function (entity) {
     return {
         id: entity.id,
         name: entity.name,
@@ -12,10 +11,10 @@ exports.toModel = function(entity) {
         phone: entity.phone,
         eduUserId: entity.eduUserId,
         token: entity.token,
-        username:entity.username,
-        isAdmin:entity.isAdmin,
-    };
-};
-exports.toSearchModel = function(entities) {
-    return _.map(entities, exports.toModel);
-};
+        username: entity.username,
+        isAdmin: entity.isAdmin
+    }
+}
+exports.toSearchModel = function (entities) {
+    return _.map(entities, exports.toModel)
+}
